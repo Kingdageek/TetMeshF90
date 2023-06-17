@@ -6,7 +6,7 @@ program main
    implicit none
    type(BaseMesh) :: base_mesh
    type(Vertex) :: nodes(5), elementNodes(4)
-   type(Tetrahedron), allocatable :: tet(:)
+   type(Tetrahedron), allocatable :: tet(:), allNeighbours(:)
    type(MeshEdge) :: edge
    integer :: numNodes, currLevel, numElements, numLevelElements, i,j, domainId, vtxLevel
    type(Tetrahedron) :: neighbours(4)
@@ -324,5 +324,33 @@ program main
    write(*,*) "Attempting to generate nodes interpolation file"
    call generateNodesInterpolationFile(base_mesh)
    write(*,*) "File successfully generated!"
+   write(*,*) "**********************************************************"
+   ! facet attached neighbours for 6th element on 2nd level
+   ! write(*,*) "Checking for facet-attached, for 6th element on 2nd level: "
+   ! neighbours = base_mesh%getLevelMeshElementFacetAttachedNeighbours(6, 2)
+   ! write(*,*) "Neighbours for element with levelId: ", 6
+   ! write(*,*) "Checking for facet-attached, for 2nd element on 2nd level: "
+   ! neighbours = base_mesh%getLevelMeshElementFacetAttachedNeighbours(2, 2)
+   write(*,*) "Checking for facet-attached, for 1st element on 1st level: "
+   neighbours = base_mesh%getLevelMeshElementFacetAttachedNeighbours(1, 1)
+   write(*,*) "Neighbours for element with levelId: ", 1
+   do j = 1, 4
+      write(*,*) "For facet: ", j
+      write(*,*) "Is there No Neighbour: ", neighbours(j)%isNullElement()
+      if ( .not. neighbours(j)%isNullElement() ) then
+         write(*,*) "The neighbour cell globalId: ", neighbours(j)%globalId
+      end if
+   end do
+   write(*,*) "**********************************************************"
+   ! test all neighbours
+   ! write(*,*) "Checking for all neighbours, for 6th element on 2nd level: "
+   ! allNeighbours = base_mesh%getLevelMeshElementNeighbours(6, 2)
+   ! write(*,*) "Checking for all neighbours, for 2nd element on 2nd level: "
+   ! allNeighbours = base_mesh%getLevelMeshElementNeighbours(2, 2)
+   write(*,*) "Checking for all neighbours, for 1st element on 1st level: "
+   allNeighbours = base_mesh%getLevelMeshElementNeighbours(1, 1)
+   do j = 1, size(allNeighbours)
+      write(*,*) "The neighbour cell globalId: ", allNeighbours(j)%globalId
+   end do
    write(*,*) "**********************************************************"
 end program main

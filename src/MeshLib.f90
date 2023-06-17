@@ -216,7 +216,7 @@ module MeshLib
       procedure :: getLevelElementsAttachedToEdge, getLevelElementIdsAttachedToVertex, getEdgeMidVertex
       procedure :: buildLevelMeshInterLevelConnectivity, getLevelMeshHangingNodes
       procedure :: refineLevelElement, createMidVertexOnEdge, localRegularRefinement
-      procedure :: getLevelMeshNumNodes
+      procedure :: getLevelMeshNumNodes, getLevelMeshElementNeighbours
    end type BaseMesh
 
 contains
@@ -573,6 +573,73 @@ contains
          end if
       end do
    end function getLevelElementsAttachedToEdge
+
+   ! to get both edge and facet-attached neighbours
+   function getLevelMeshElementNeighbours(base_mesh, elementLevelId, meshLevel) result(neighbours)
+      implicit none
+      class(BaseMesh), intent(in) :: base_mesh
+      integer, intent(in) :: elementLevelId, meshLevel
+      type(Tetrahedron), allocatable :: tempNeighbours(:), neighbours(:), edgeNeighbours(:)
+      type(Tetrahedron) :: facetNeighbours(4)
+      type(LevelMesh) :: mesh
+      integer :: i, j, levelId, numNeighbours
+      type(Tetrahedron) :: checkedTet
+      mesh = base_mesh%levelMeshes(meshLevel)
+
+      ! allocate tempNeighbours to the numElements of this level Mesh - using an array as a map
+      ! Necessary to remove duplicate elements quickly, to avoid comparing returned elements cos
+      ! diff. edges and facets can have similar elements incidented on them
+      allocate(tempNeighbours(mesh%numElements))
+      ! There's actually no need to get the facet Neighbours cos Edge Neighbours will ALWAYS
+      ! have every facet Neighbour Included
+      ! for facet neighbours
+      ! facetNeighbours = base_mesh%getLevelMeshElementFacetAttachedNeighbours(elementLevelId, meshLevel)
+      ! ! facetNeighbours include NULL elements for boundary facets
+      ! do i = 1, 4
+      !    if ( .not. facetNeighbours(i)%isNullElement() ) then
+      !       levelId = facetNeighbours(i)%elementLevelId
+      !       tempNeighbours(levelId) = facetNeighbours(i)
+      !    end if
+      ! end do
+
+      checkedTet = base_mesh%tetrahedrons(mesh%elements(elementLevelId))
+      ! for edge neighbours - 6 edges per tet
+      do i = 1, 6
+         ! get every cell incidented on the edge, excluding the current cell
+         edgeNeighbours = base_mesh%getLevelElementsAttachedToEdge(meshLevel, checkedTet%edges(i))
+         ! Look through these and either simply update (if there was an element there already)
+         ! tempNeighbours or if it's new slot it in
+         do j = 1, size(edgeNeighbours)
+            ! edgeNeighbours should not contain any NULL element.
+            ! The checked TET is also included in cells incident on said edge so, check
+            ! to avoid including it too
+            levelId = edgeNeighbours(j)%elementLevelId
+            if ( levelId /= checkedTet%elementLevelId ) then
+               tempNeighbours(levelId) = edgeNeighbours(j)
+            end if
+         end do
+      end do
+
+      ! To avoid returning NULL elements, we count the actual neighbours found to initialize
+      ! the returned array - neighbours
+      numNeighbours = 0
+      do i = 1, mesh%numElements
+         if ( .not. tempNeighbours(i)%isNullElement() ) then
+            numNeighbours = numNeighbours + 1
+         end if
+      end do
+
+      allocate(neighbours(numNeighbours))
+      ! to track position in neighbours
+      j = 0
+      do i = 1, mesh%numElements
+         if ( .not. tempNeighbours(i)%isNullElement() ) then
+            j = j+1
+            neighbours(j) = tempNeighbours(i)
+         end if
+      end do
+      write(*,*) "is j same as size of neighbours: ", j == size(neighbours)
+   end function getLevelMeshElementNeighbours
 
    logical function elementHasEdge(tet, edge)
       implicit none
@@ -1451,14 +1518,25 @@ contains
          parentLevelId = mesh%e2pe(elementLevelId)
          parentTet = base_mesh%tetrahedrons(parentMesh%elements(parentLevelId))
          ! get the facet-attached neighbours
-         ! MIGHT NEED THE EDGE ATTACHED NEIGHBOURS TOO!
-         parentNeighbours = base_mesh%getLevelMeshElementFacetAttachedNeighbours(parentLevelId, parentLevel)
+         ! MIGHT NEED THE EDGE ATTACHED NEIGHBOURS TOO! - DONE!
+         ! parentNeighbours = base_mesh%getLevelMeshElementFacetAttachedNeighbours(parentLevelId, parentLevel)
          ! To check if neighbours are unrefined, if they are refine them recursively
          ! 4 facets => max of 4 neighbours by facet
-         do i = 1, 4
-            ! if the neighbour on this facet i is not null i.e. boundary and it is not refined
-            ! unrefined => element is Active
-            if (.not. parentNeighbours(i)%isNullElement() .and. parentNeighbours(i)%isActive) then
+         ! do i = 1, 4
+         !    ! if the neighbour on this facet i is not null i.e. boundary and it is not refined
+         !    ! unrefined => element is Active
+         !    if (.not. parentNeighbours(i)%isNullElement() .and. parentNeighbours(i)%isActive) then
+         !       write(*,*) "Unrefined parent neighbour found, with details: "
+         !       write(*,*) "Element Level Id: ", parentNeighbours(i)%elementLevelId
+         !       write(*,*) "On Level: ", parentLevel
+         !       call base_mesh%refineLevelElement(parentLevel, parentNeighbours(i)%elementLevelId)
+         !    end if
+         ! end do
+         parentNeighbours = base_mesh%getLevelMeshElementNeighbours(parentLevelId, parentLevel)
+         ! over the returned neighbours
+         do i = 1, size(parentNeighbours)
+            ! No NULL element returned here, just check if it's unrefined
+            if (parentNeighbours(i)%isActive) then
                write(*,*) "Unrefined parent neighbour found, with details: "
                write(*,*) "Element Level Id: ", parentNeighbours(i)%elementLevelId
                write(*,*) "On Level: ", parentLevel
