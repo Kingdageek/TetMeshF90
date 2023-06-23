@@ -216,7 +216,7 @@ module MeshLib
       procedure :: getLevelElementsAttachedToEdge, getLevelElementIdsAttachedToVertex, getEdgeMidVertex
       procedure :: buildLevelMeshInterLevelConnectivity, getLevelMeshHangingNodes
       procedure :: refineLevelElement, createMidVertexOnEdge, localRegularRefinement
-      procedure :: getLevelMeshNumNodes, getLevelMeshElementNeighbours
+      procedure :: getLevelMeshNumNodes, getLevelMeshElementNeighbours, getElementLargeNeighbours
    end type BaseMesh
 
 contains
@@ -580,7 +580,7 @@ contains
       class(BaseMesh), intent(in) :: base_mesh
       integer, intent(in) :: elementLevelId, meshLevel
       type(Tetrahedron), allocatable :: tempNeighbours(:), neighbours(:), edgeNeighbours(:)
-      type(Tetrahedron) :: facetNeighbours(4)
+      ! type(Tetrahedron) :: facetNeighbours(4)
       type(LevelMesh) :: mesh
       integer :: i, j, levelId, numNeighbours
       type(Tetrahedron) :: checkedTet
@@ -640,6 +640,70 @@ contains
       end do
       write(*,*) "is j same as size of neighbours: ", j == size(neighbours)
    end function getLevelMeshElementNeighbours
+
+   function getElementLargeNeighbours(base_mesh, tet) result(largeNeighbours)
+      implicit none
+      class(BaseMesh), intent(in) :: base_mesh
+      type(Tetrahedron), intent(in) :: tet
+      type(Tetrahedron), allocatable :: largeNeighbours(:), tempNeighbours(:), edgeNeighbours(:)
+      integer :: parentLevel, i, j, levelId, numNeighbours
+      type(LevelMesh) :: mesh
+      type(Vertex) :: vtx
+
+      ! allocate largeNeighbours to size 0 to return that when it checks
+      allocate(largeNeighbours(0))
+      ! There'd be no largeNeighbours for elements on Level 1
+      if (tet%level < 2) return
+      parentLevel = tet%level - 1
+      mesh = base_mesh%levelMeshes(parentLevel)
+      ! allocate tempNeighbours to numElements on parentLevel mesh to help with avoiding duplicates
+      ! and null values
+      allocate(tempNeighbours(mesh%numElements))
+      ! get parent edge for every vertex in tet
+      ! over the vertices in tet
+      do i = 1, 4
+         vtx = tet%vertices(i)
+         ! We need to check only Vertices INTERPOLATED from the parentLevel
+         ! cos an element can have vertices created higher up the hierarchy too
+         ! but there must be vertices directly interpolated from its parentElement
+         if ( vtx%elementLevel /= parentLevel) cycle
+         ! get elements incident to those edges
+         ! get neighbours for the parentEdge of this vertex in the parent mesh
+         ! write(*,*) "ParentLevel: ", parentLevel
+         ! write(*,*) "ParentEdge vertices: ", vtx%parentEdge%vertices
+         edgeNeighbours = base_mesh%getLevelElementsAttachedToEdge(parentLevel, vtx%parentEdge)
+         do j = 1, size(edgeNeighbours)
+            ! edgeNeighbours should not contain any NULL element.
+            ! The parent of this TET is also included in cells incident on said edge so, check
+            ! to avoid including it too.
+            ! We can't count numNeighbours here cos diff. edges can have the same elements incident on them
+            ! i.e. tempNeighbours(element) can be updated and re-updated, but there'd be just one eventually
+            levelId = edgeNeighbours(j)%elementLevelId
+            if ( levelId /= tet%parentElementLevelId ) then
+               tempNeighbours(levelId) = edgeNeighbours(j)
+            end if
+         end do
+      end do
+
+      ! To avoid returning NULL elements, we count the actual neighbours found to initialize
+      ! the returned array - neighbours
+      numNeighbours = 0
+      do i = 1, mesh%numElements
+         if ( .not. tempNeighbours(i)%isNullElement() ) then
+            numNeighbours = numNeighbours + 1
+         end if
+      end do
+      if (allocated(largeNeighbours)) deallocate(largeNeighbours)
+      allocate(largeNeighbours(numNeighbours))
+      ! to track position in neighbours
+      j = 0
+      do i = 1, mesh%numElements
+         if ( .not. tempNeighbours(i)%isNullElement() ) then
+            j = j+1
+            largeNeighbours(j) = tempNeighbours(i)
+         end if
+      end do
+   end function getElementLargeNeighbours
 
    logical function elementHasEdge(tet, edge)
       implicit none
@@ -744,6 +808,9 @@ contains
                   end if
                end do
             end if
+            if ( vtx%elementLevel > parentLevel ) then
+               exit
+            end if
          end do
          ! check if hanging nodes were found
          if ( numHangingNodes > 0 ) then
@@ -805,15 +872,6 @@ contains
    end function getLevelMeshNumNodes
 
    !!!!! SUBROUTINES !!!!!!
-   ! subroutine addVertex(base_mesh, mesh, x, y, z, v)
-   !    class(BaseMesh), intent(inout) :: base_mesh
-   !    type(LevelMesh), intent(inout) :: mesh
-   !    double precision, intent(in) :: x, y, z
-   !    type(Vertex), intent(inout) :: v
-   !    v%x = x
-   !    v%y = y
-   !    v%z = z
-   ! end subroutine addVertex
 
    subroutine initialize(base_mesh)
       class(BaseMesh), intent(inout) :: base_mesh
@@ -890,11 +948,6 @@ contains
          ! We're now adding original vertices from L1 to v2pe, giving them 0 as parent level Id and parent level
          ! this routine can run for every vertex now
          call base_mesh%mapElementVerticesToParent(tetrahedrons(i))
-
-         ! add tet to elementConn of mesh. Looping over the vertices of a tet
-         ! do j = 1, 4
-         !    mesh%elementConn(mesh%numElements,j) = tetrahedrons(i)%vertices(j)%globalId
-         ! end do
          ! add tet globalID to elements of level mesh
          ! tetrahedrons(i)%globalId = base_mesh%numElements
          mesh%elements(mesh%numElements) = tetrahedrons(i)%globalId
@@ -962,37 +1015,6 @@ contains
 
       end do
    end subroutine mapElementVerticesToParent
-   ! subroutine mapElementVerticesToParent(base_mesh, tet)
-   !    implicit none
-   !    class(BaseMesh), intent(inout) :: base_mesh
-   !    type(Tetrahedron), intent(inout) :: tet
-   !    integer :: i, globalId, numNodes
-   !    ! type(Vertex) :: vtx
-
-   !    ! we want to assign global IDS to nodes not yet created here
-   !    ! 4 nodes per Tet
-   !    do i = 1, 4
-   !       ! for each node, get the globalId
-   !       globalId = tet%vertices(i)%globalId
-   !       ! By checking if it's been saved already, we avoid updating the parentLevelId and the localId On current element
-
-   !       if ( globalId == -1 ) then
-   !          ! this node has not been attached to base_mesh so, has no globalID
-   !          numNodes = base_mesh%numVertices + 1
-   !          globalId = numNodes
-   !          tet%vertices(i)%globalId = globalId
-   !          tet%vertices(i)%localId = i
-   !          ! before adding to base_mesh, confirm there's space to add
-   !          if ( globalId > size(base_mesh%v2pe) ) then
-   !             call base_mesh%expandV2pe()
-   !          end if
-   !          ! add to v2pe
-   !          base_mesh%v2pe(globalId) = tet%vertices(i)
-   !          base_mesh%numVertices = numNodes
-   !       end if
-
-   !    end do
-   ! end subroutine mapElementVerticesToParent
 
    ! Adds tetrahedron `tet` to ALREADY RESERVED CELL SPACE in `base_mesh` and LevelMesh with level `meshLevel`
    subroutine addTetrahedron(base_mesh, meshLevel, tet)
@@ -1012,12 +1034,7 @@ contains
 
       mesh = base_mesh%levelMeshes(meshLevel)
       mesh%numElements = mesh%numElements + 1
-      ! add tet to elementConn of mesh. Looping over the vertices of a tet
-      ! do j = 1, 4
-      !    mesh%elementConn(mesh%numElements,j) = tet%vertices(j)%globalId
-      ! end do
-      ! tet%globalId = base_mesh%numElements
-      ! tet%elementLevelId = mesh%numElements
+
       ! add tet globalID to elements array of level mesh
       mesh%elements(mesh%numElements) = base_mesh%numElements
       ! add Tet to base_mesh tetrahedrons
@@ -1051,12 +1068,6 @@ contains
       ! Get the Mesh at this level
       mesh = base_mesh%levelMeshes(meshLevel)
       ! 4 nodes form the connectivity
-      ! allocate(elementConn(size(mesh%elementConn), 4))
-      ! do i = 1, size(mesh%elementConn)
-      !    elementConn(i,:) = mesh%elementConn(i,:)
-      ! end do
-      ! if (allocated(mesh%elementConn)) deallocate(mesh%elementConn)
-      ! base_mesh%levelMeshes(meshLevel)%elementConn = elementConn
       allocate(elements(size(mesh%elements) + numCells))
       do i = 1, size(mesh%elements)
          elements(i) = mesh%elements(i)
@@ -1486,9 +1497,9 @@ contains
       class(BaseMesh), intent(inout) :: base_mesh
       integer, intent(in) :: meshLevel, elementLevelId
       type(LevelMesh) :: mesh, parentMesh
-      integer :: i, j, k, parentLevelId, parentLevel, midVtxCount, numNodes, nextLevel
-      type(Tetrahedron) :: tet, parentTet, refinedTet
-      type(Tetrahedron), allocatable :: parentNeighbours(:), edgeNeighbours(:)
+      integer :: i, j, parentLevel, midVtxCount, numNodes, nextLevel
+      type(Tetrahedron) :: tet, refinedTet
+      type(Tetrahedron), allocatable :: largeNeighbours(:), edgeNeighbours(:)
       type(Vertex) :: midVertices(6)
       type(Vertex) :: edgeMidVtx
 
@@ -1509,38 +1520,21 @@ contains
          call base_mesh%initializeLevelMesh()
       end if
 
-      ! if element's meshLevel > 1 then check its parent's neigbours to ensure they've been
-      ! refined. level 1 elements are original, no parents
+      ! if element's meshLevel > 1 then check its large neigbours to ensure they've been
+      ! refined. These are elements on its parent level that it shares edges with.
+      ! level 1 elements are original, no parents
       if ( meshLevel > 1 ) then
          parentMesh = base_mesh%levelMeshes(parentLevel)
-         ! get parent. This should be already present. should not be possible for an element
-         ! to exist on levels > 1 without a parent
-         parentLevelId = mesh%e2pe(elementLevelId)
-         parentTet = base_mesh%tetrahedrons(parentMesh%elements(parentLevelId))
-         ! get the facet-attached neighbours
-         ! MIGHT NEED THE EDGE ATTACHED NEIGHBOURS TOO! - DONE!
-         ! parentNeighbours = base_mesh%getLevelMeshElementFacetAttachedNeighbours(parentLevelId, parentLevel)
-         ! To check if neighbours are unrefined, if they are refine them recursively
-         ! 4 facets => max of 4 neighbours by facet
-         ! do i = 1, 4
-         !    ! if the neighbour on this facet i is not null i.e. boundary and it is not refined
-         !    ! unrefined => element is Active
-         !    if (.not. parentNeighbours(i)%isNullElement() .and. parentNeighbours(i)%isActive) then
-         !       write(*,*) "Unrefined parent neighbour found, with details: "
-         !       write(*,*) "Element Level Id: ", parentNeighbours(i)%elementLevelId
-         !       write(*,*) "On Level: ", parentLevel
-         !       call base_mesh%refineLevelElement(parentLevel, parentNeighbours(i)%elementLevelId)
-         !    end if
-         ! end do
-         parentNeighbours = base_mesh%getLevelMeshElementNeighbours(parentLevelId, parentLevel)
+         ! get Large neighbours for tet
+         largeNeighbours = base_mesh%getElementLargeNeighbours(tet)
          ! over the returned neighbours
-         do i = 1, size(parentNeighbours)
+         do i = 1, size(largeNeighbours)
             ! No NULL element returned here, just check if it's unrefined
-            if (parentNeighbours(i)%isActive) then
-               write(*,*) "Unrefined parent neighbour found, with details: "
-               write(*,*) "Element Level Id: ", parentNeighbours(i)%elementLevelId
+            if (largeNeighbours(i)%isActive) then
+               write(*,*) "Unrefined large neighbour found, with details: "
+               write(*,*) "Element Level Id: ", largeNeighbours(i)%elementLevelId
                write(*,*) "On Level: ", parentLevel
-               call base_mesh%refineLevelElement(parentLevel, parentNeighbours(i)%elementLevelId)
+               call base_mesh%refineLevelElement(parentLevel, largeNeighbours(i)%elementLevelId)
             end if
          end do
       end if
@@ -1571,6 +1565,7 @@ contains
             ! mid vtx not found, create it
             numNodes = numNodes + 1
             edgeMidVtx = base_mesh%createMidVertexOnEdge(tet%edges(i), tet, numNodes)
+            write(*,*) "Parent edge of mid vtx: ", edgeMidVtx%parentEdge%vertices
          end if
          write(*,*) "Edge v1->v2: ", tet%edges(i)%vertices
          write(*,*) "Mid-vertex for above edge has globalId: ", edgeMidVtx%globalId

@@ -276,7 +276,13 @@ program main
    write(*,*) "**************************************************************"
    write(*,*) "Test Refine level element for first element: "
    call base_mesh%refineLevelElement(currLevel, tet(1)%elementLevelId)
+   ! generate initial view file for level 2 with just one element refined
+   ! before 1-level rule is in effect
+   call generateLevelMeshViewFile(base_mesh, currLevel+1)
    write(*,*) "**************************************************************"
+   ! write(*,*) "Test Refine level element for second child of first element: "
+   ! nextLevel = currLevel + 1
+   ! call base_mesh%refineLevelElement(nextLevel, base_mesh%levelMeshes(currLevel)%e2ce(1)+1)
    write(*,*) "Test Refine level element for first child of first element: "
    nextLevel = currLevel + 1
    call base_mesh%refineLevelElement(nextLevel, base_mesh%levelMeshes(currLevel)%e2ce(1))
@@ -314,11 +320,12 @@ program main
    end do
    write(*,*) "**********************************************************"
    ! generate mesh view files for every level
-   do i = 1, base_mesh%numLevels
-      write(*,*) "Attempting to generate mesh views file for level: ", i
-      call generateLevelMeshViewFile(base_mesh, i)
-      write(*,*) "File successfully generated!"
-   end do
+   ! do i = 1, base_mesh%numLevels
+   !    write(*,*) "Attempting to generate mesh views file for level: ", i
+   !    call generateLevelMeshViewFile(base_mesh, i)
+   !    write(*,*) "File successfully generated!"
+   ! end do
+   call generateLevelMeshViewFile(base_mesh, nextLevel+1)
    write(*,*) "**********************************************************"
    ! generate node interpolation file
    write(*,*) "Attempting to generate nodes interpolation file"
@@ -351,6 +358,20 @@ program main
    allNeighbours = base_mesh%getLevelMeshElementNeighbours(1, 1)
    do j = 1, size(allNeighbours)
       write(*,*) "The neighbour cell globalId: ", allNeighbours(j)%globalId
+   end do
+   write(*,*) "**********************************************************"
+   ! test for large Neighbours
+   write(*,*) "Checking for the large neighbours of the first element on the second level..."
+   write(*,*) "Tet global ID: ", base_mesh%levelMeshes(2)%elements(1)
+   allNeighbours = base_mesh%getElementLargeNeighbours(base_mesh%tetrahedrons(base_mesh%levelMeshes(2)%elements(1)))
+   write(*,*) "Size of neighbours: ", size(allNeighbours)
+   write(*,*) "-----------------------------------------------------------"
+   write(*,*) "Checking for the large neighbours of the second element on the second level..."
+   write(*,*) "Tet global ID: ", base_mesh%levelMeshes(2)%elements(2)
+   allNeighbours = base_mesh%getElementLargeNeighbours(base_mesh%tetrahedrons(base_mesh%levelMeshes(2)%elements(2)))
+   write(*,*) "Size of neighbours: ", size(allNeighbours)
+   do i = 1, size(allNeighbours)
+      write(*,*) "Neighbour found with globalId: ", allNeighbours(i)%globalId
    end do
    write(*,*) "**********************************************************"
 end program main

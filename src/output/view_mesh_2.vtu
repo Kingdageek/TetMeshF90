@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <VTKFile type="UnstructuredGrid" version="0.1">
 <UnstructuredGrid>
-<Piece NumberOfPoints="        14" NumberOfCells="        18">
+<Piece NumberOfPoints="        11" NumberOfCells="        10">
 <Points>
 <DataArray type="Float64" Name="nodes" NumberOfComponents=" 3" format="ascii">
-    0.00000E+00     0.00000E+00     0.00000E+00     0.10000E+01    -0.17300E+01     0.00000E+00     0.20000E+01     0.00000E+00     0.00000E+00     0.10000E+01    -0.58000E+00     0.16300E+01     0.26700E+01    -0.15400E+01     0.10900E+01     0.50000E+00    -0.86500E+00     0.00000E+00     0.15000E+01    -0.86500E+00     0.00000E+00     0.10000E+01     0.00000E+00     0.00000E+00     0.50000E+00    -0.29000E+00     0.81500E+00     0.10000E+01    -0.11550E+01     0.81500E+00     0.15000E+01    -0.29000E+00     0.81500E+00     0.18350E+01    -0.10600E+01     0.13600E+01     0.18350E+01    -0.16350E+01     0.54500E+00     0.23350E+01    -0.77000E+00     0.54500E+00 </DataArray>
+    0.00000E+00     0.00000E+00     0.00000E+00     0.10000E+01    -0.17300E+01     0.00000E+00     0.20000E+01     0.00000E+00     0.00000E+00     0.10000E+01    -0.58000E+00     0.16300E+01     0.26700E+01    -0.15400E+01     0.10900E+01     0.50000E+00    -0.86500E+00     0.00000E+00     0.15000E+01    -0.86500E+00     0.00000E+00     0.10000E+01     0.00000E+00     0.00000E+00     0.50000E+00    -0.29000E+00     0.81500E+00     0.10000E+01    -0.11550E+01     0.81500E+00     0.15000E+01    -0.29000E+00     0.81500E+00 </DataArray>
 </Points>
 <Cells>
 <DataArray type="Int32" Name="connectivity" NumberOfComponents=" 1" format="ascii">
-     0      1      2      3      3      1      2      4      0      5      7      8      5      1      6      9      7      6      2     10      8      9     10      3      5      7      8      9      5      7      6      9      7      8      9     10      7      6      9     10      3      9     10     11      9      1      6     12     10      6      2     13     11     12     13      4      9     10     11     12      9     10      6     12     10     11     12     13     10      6     12     13 </DataArray>
+     0      1      2      3      3      1      2      4      0      5      7      8      5      1      6      9      7      6      2     10      8      9     10      3      5      7      8      9      5      7      6      9      7      8      9     10      7      6      9     10 </DataArray>
 <DataArray type="Int32" Name="offsets" NumberOfComponents=" 1" format="ascii">
-     4      8     12     16     20     24     28     32     36     40     44     48     52     56     60     64     68     72 </DataArray>
+     4      8     12     16     20     24     28     32     36     40 </DataArray>
 <DataArray type="UInt8" Name="types" NumberOfComponents=" 1" format="ascii">
-    10     10     10     10     10     10     10     10     10     10     10     10     10     10     10     10     10     10 </DataArray>
+    10     10     10     10     10     10     10     10     10     10 </DataArray>
 </Cells>
 </Piece>
 </UnstructuredGrid> </VTKFile>
