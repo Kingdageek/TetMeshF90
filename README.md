@@ -2,7 +2,7 @@
 
 Fortran mesh Library, based on the Hierarchical Array-based Half-facet Data Structure by X. Zhao et al, for representation and multilevel refinement of 3D tetrahedral meshes.
 
-This library was developed as part of my thesis for an M.Sc. in Material Science & Engineering at the University of Kiel titled _Testing and Extension of Multigrid Finite Element Method (FEM) Code: Implementation of volume meshing with tetrahedrons and mesh refinement_, as such, it's still experimental software. You can read the thesis here: [https://drive.google.com/file/d/1QCmXw6_mXAnN-ntSbp22KcJz1R90CftN/view?usp=sharing]. You have to read at least chapter 3 on Methodology.
+This library was developed as part of my thesis for an M.Sc. in Material Science & Engineering at the University of Kiel titled _Testing and Extension of Multigrid Finite Element Method (FEM) Code: Implementation of volume meshing with tetrahedrons and mesh refinement_. As such, it's still experimental software. You can read the thesis here: [https://drive.google.com/file/d/1QCmXw6_mXAnN-ntSbp22KcJz1R90CftN/view?usp=sharing]. You have to read at least chapter 3 on Methodology.
 The underlying mesh data structure is based on the work published in these two papers:
 
 - V. Dyedov, N. Ray, D. Einstein, and X. Jiao, “AHF : Array-based half-facet data structures for mixed-dimensional and non- manifold meshes . AHF : Array-based Half-Facet Data Structure for Mixed-Dimensional and Non-manifold Meshes,” no. May 2014, 2013.
@@ -29,7 +29,7 @@ The library can be currently used to:
 These restrictions are imposed:
 
 - The initial, arbitrary, coarse mesh must be a conformal and manifold 3D mesh of tetrahedrons
-- There cannot be more than one hanging node per edge (or face) of an element. This is the 1-irregularity index rule. This is automatically enforced during mesh refinement and allows for the generation of graded meshes
+- There cannot be more than one hanging node per shared edge (or face) of an element. This is the 1-irregularity index rule. This is automatically enforced during mesh refinement and allows for the generation of graded meshes
 
 ### Use
 
