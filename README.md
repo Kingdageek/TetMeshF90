@@ -1,14 +1,14 @@
 # TetMeshF90
 
-Fortran mesh Library, based on the Hierarchical Array-based Half-facet Data Structure by X. Zhao et al, for representation and multilevel refinement of 3D tetrahedral meshes.
+Fortran Mesh Library, based on the Hierarchical Array-based Half-facet Data Structure by X. Zhao et al, for representation and multilevel refinement of 3D tetrahedral meshes.
 
-This library was developed as part of my thesis for an M.Sc. in Material Science & Engineering at the University of Kiel titled _Testing and Extension of Multigrid Finite Element Method (FEM) Code: Implementation of volume meshing with tetrahedrons and mesh refinement_. As such, it's still experimental software. You can read the thesis here: [https://drive.google.com/file/d/1QCmXw6_mXAnN-ntSbp22KcJz1R90CftN/view?usp=sharing]. You have to read at least chapter 3 on Methodology.
+This library was developed as part of my thesis for an M.Sc. in Material Science & Engineering at the University of Kiel titled _Testing and Extension of Multigrid Finite Element Method (FEM) Code: Implementation of volume meshing with tetrahedrons and mesh refinement_. As such, it's still experimental software.
 The underlying mesh data structure is based on the work published in these two papers:
 
-- V. Dyedov, N. Ray, D. Einstein, and X. Jiao, “AHF : Array-based half-facet data structures for mixed-dimensional and non- manifold meshes . AHF : Array-based Half-Facet Data Structure for Mixed-Dimensional and Non-manifold Meshes,” no. May 2014, 2013.
+- V. Dyedov, N. Ray, D. Einstein, and X. Jiao, “AHF: Array-based half-facet data structures for mixed-dimensional and non-manifold meshes . AHF: Array-based Half-Facet Data Structure for Mixed-Dimensional and Non-manifold Meshes,” no. May 2014, 2013.
 - X. Zhao, R. Conley, N. Ray, V. S. Mahadevan, and X. Jiao, “Conformal and non-conformal adaptive mesh refinement with hierarchical array-based half-facet data structures,” Procedia Eng., vol. 124, pp. 304–316, 2015, doi: 10.1016/j.proeng.2015.10.141.
 
-You don't have to read them though, unless you want to, as chapter 3 in my thesis already describes in simple terms the conventions used and the underlying data structure for the library.
+While the library is full of helpful comments, you have to read at least the description of the hierarchical array-based half-facet data structure in the second paper by X. Zhao et al to understand the implementation.
 
 The library is modular and provides functions and subroutines that can be used to perform Adaptive Mesh Refinement for tetrahedral meshes.
 
@@ -33,6 +33,6 @@ These restrictions are imposed:
 
 ### Use
 
-You have to create your own FORTRAN programs for what you want to implement and then use the procedures in the library to represent the meshes and refine them. Also, compile the library into your program to run. The appendix section in the thesis document details how to do all this. Also, see the _src/regular_tet.f90_ file [https://github.com/Kingdageek/TetMeshF90/blob/master/src/regular_tet.f90] for a sample code on how it's used.
+You have to create your own FORTRAN programs for what you want to implement and then use the procedures in the library to represent the meshes and refine them. Also, compile the library into your program to run. For how to do this, see the [_src/regular_tet.f90_] (https://github.com/Kingdageek/TetMeshF90/blob/master/src/regular_tet.f90) file.
 
-Also, take a look at the _BaseMesh_ structure in the _src/MeshLib.f90_ file [https://github.com/Kingdageek/TetMeshF90/blob/master/src/MeshLib.f90], for an overview of all the procedures available.
+Also, take a look at the _BaseMesh_ structure in the [_src/MeshLib.f90_] (https://github.com/Kingdageek/TetMeshF90/blob/master/src/MeshLib.f90) file, for an overview of all the procedures available.
