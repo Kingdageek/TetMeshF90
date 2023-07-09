@@ -33,6 +33,6 @@ These restrictions are imposed:
 
 ### Use
 
-You have to create your own FORTRAN programs for what you want to implement and then use the procedures in the library to represent the meshes and refine them. Also, compile the library into your program to run. For how to do this, see the [_src/regular_tet.f90_] (https://github.com/Kingdageek/TetMeshF90/blob/master/src/regular_tet.f90) file.
+You have to create your own FORTRAN programs for what you want to implement and then use the procedures in the library to represent the meshes and refine them. Also, compile the library into your program to run. For how to do this, see the _[src/regular_tet.f90]_ (https://github.com/Kingdageek/TetMeshF90/blob/master/src/regular_tet.f90) file.
 
-Also, take a look at the _BaseMesh_ structure in the [_src/MeshLib.f90_] (https://github.com/Kingdageek/TetMeshF90/blob/master/src/MeshLib.f90) file, for an overview of all the procedures available.
+Also, take a look at the _BaseMesh_ structure in the _[src/MeshLib.f90]_ (https://github.com/Kingdageek/TetMeshF90/blob/master/src/MeshLib.f90) file, for an overview of all the procedures available.
